@@ -8,3 +8,6 @@ build:		run-cmake
 
 install:	build
 	cmake --install build
+
+clean:
+	$(RM) -r build
