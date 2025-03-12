@@ -35,6 +35,9 @@ lengt = "lengt"
 referer = "referer"
 allo = "allo"
 pinter = "pinter"
+helo = "helo"
+hom = "hom"
+pn = "pn"
 
 [type.make]
 extend-glob = []

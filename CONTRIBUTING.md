@@ -20,13 +20,16 @@ Every code contribution to this project is highly valued and appreciated. I enco
 - After you're done writing your code, please make sure that:
    - You added unit-tests for all of the new code, either on `Tests/Packet++Test` or `Tests/Pcap++Test` (whichever makes sense)
    - PcapPlusPlus compiles successfully on your machine, including all unit-tests and examples
-   - Unit-tests pass succssfully on your machine (both `Tests/Packet++Test` and `Tests/Pcap++Test`)
+   - Unit-tests pass successfully on your machine (both `Tests/Packet++Test` and `Tests/Pcap++Test`)
    - All new APIs are well documented using Doxygen (please use @ for keywords)
-   - Make sure that pre-commit hooks are passing by using `pre-commit run --all-files`. For pre-commit hooks you need to install `cppcheck` on your system. Recommended and tested version is 2.7. You can install by using:
-     - For Linux (apt) `sudo apt install cppcheck`
-     - For Windows (using `choco`) `choco install cppcheck --version=2.7`
-     - For Windows (MSI install): https://github.com/danmar/cppcheck/releases/download/2.7/cppcheck-2.7-x64-Setup.msi
-     - Build from source: https://github.com/danmar/cppcheck/releases/tag/2.7
+   - Make sure that pre-commit hooks are passing by using `pre-commit run --all-files`. For pre-commit hooks you need to install `cppcheck` and `clang-format` on your system. You can install them using the following commands:
+      - `pre-commit`: `pip install pre-commit`
+      - `cppcheck` (version 2.7 is recommended):
+         - For Linux (apt) `sudo apt install cppcheck`
+         - For Windows (using `choco`) `choco install cppcheck --version=2.7`
+         - For Windows (MSI install): https://github.com/danmar/cppcheck/releases/download/2.7/cppcheck-2.7-x64-Setup.msi
+         - Build from source: https://github.com/danmar/cppcheck/releases/tag/2.7
+      - `clang-format`: `pip install clang-format==19.1.6`
 - After you commit the code and push it to GitHub, before creating the pull request please make sure that:
    - You merge all new code from **dev** to your fork
    - CI passes on all platforms

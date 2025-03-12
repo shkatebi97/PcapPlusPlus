@@ -1,5 +1,4 @@
-#ifndef PACKETPP_ETH_DOT3_LAYER
-#define PACKETPP_ETH_DOT3_LAYER
+#pragma once
 
 #include "Layer.h"
 #include "MacAddress.h"
@@ -36,14 +35,15 @@ namespace pcpp
 	class EthDot3Layer : public Layer
 	{
 	public:
-
 		/**
 		 * A constructor that creates the layer from an existing packet raw data
 		 * @param[in] data A pointer to the raw data (will be casted to ether_dot3_header)
 		 * @param[in] dataLen Size of the data in bytes
 		 * @param[in] packet A pointer to the Packet instance where layer will be stored in
 		 */
-		EthDot3Layer(uint8_t* data, size_t dataLen, Packet* packet) : Layer(data, dataLen, NULL, packet) { m_Protocol = EthernetDot3; }
+		EthDot3Layer(uint8_t* data, size_t dataLen, Packet* packet)
+		    : Layer(data, dataLen, nullptr, packet, EthernetDot3)
+		{}
 
 		/**
 		 * A constructor that creates the layer from an existing packet raw data
@@ -52,7 +52,9 @@ namespace pcpp
 		 * @param[in] prevLayer A pointer to the previous layer
 		 * @param[in] packet A pointer to the Packet instance where layer will be stored in
 		 */
-		EthDot3Layer(uint8_t* data, size_t dataLen, Layer* prevLayer, Packet* packet) : Layer(data, dataLen, prevLayer, packet) { m_Protocol = EthernetDot3; }
+		EthDot3Layer(uint8_t* data, size_t dataLen, Layer* prevLayer, Packet* packet)
+		    : Layer(data, dataLen, prevLayer, packet, EthernetDot3)
+		{}
 
 		/**
 		 * A constructor that creates a new IEEE 802.3 Ethernet header and allocates the data
@@ -62,58 +64,81 @@ namespace pcpp
 		 */
 		EthDot3Layer(const MacAddress& sourceMac, const MacAddress& destMac, uint16_t length);
 
-		~EthDot3Layer() {}
+		~EthDot3Layer() override = default;
 
 		/**
-		 * Get a pointer to the Ethernet header. Notice this points directly to the data, so every change will change the actual packet data
+		 * Get a pointer to the Ethernet header. Notice this points directly to the data, so every change will change
+		 * the actual packet data
 		 * @return A pointer to the ether_header
 		 */
-		ether_dot3_header* getEthHeader() const { return (ether_dot3_header*)m_Data; }
+		ether_dot3_header* getEthHeader() const
+		{
+			return reinterpret_cast<ether_dot3_header*>(m_Data);
+		}
 
 		/**
 		 * Get the source MAC address
 		 * @return The source MAC address
 		 */
-		MacAddress getSourceMac() const { return MacAddress(getEthHeader()->srcMac); }
+		MacAddress getSourceMac() const
+		{
+			return MacAddress(getEthHeader()->srcMac);
+		}
 
 		/**
 		 * Set source MAC address
 		 * @param sourceMac Source MAC to set
 		 */
-		void setSourceMac(const MacAddress& sourceMac) { sourceMac.copyTo(getEthHeader()->srcMac); }
+		void setSourceMac(const MacAddress& sourceMac)
+		{
+			sourceMac.copyTo(getEthHeader()->srcMac);
+		}
 
 		/**
 		 * Get the destination MAC address
 		 * @return The destination MAC address
 		 */
-		MacAddress getDestMac() const { return MacAddress(getEthHeader()->dstMac); }
+		MacAddress getDestMac() const
+		{
+			return MacAddress(getEthHeader()->dstMac);
+		}
 
 		/**
 		 * Set destination MAC address
 		 * @param destMac Destination MAC to set
 		 */
-		void setDestMac(const MacAddress& destMac) { destMac.copyTo(getEthHeader()->dstMac); }
+		void setDestMac(const MacAddress& destMac)
+		{
+			destMac.copyTo(getEthHeader()->dstMac);
+		}
 
 		// implement abstract methods
 
 		/**
 		 * Parses next layer
 		 */
-		void parseNextLayer();
+		void parseNextLayer() override;
 
 		/**
 		 * @return Size of ether_dot3_header
 		 */
-		size_t getHeaderLen() const { return sizeof(ether_dot3_header); }
+		size_t getHeaderLen() const override
+		{
+			return sizeof(ether_dot3_header);
+		}
 
 		/**
 		 * Does nothing for this layer
 		 */
-		void computeCalculateFields() {}
+		void computeCalculateFields() override
+		{}
 
-		std::string toString() const;
+		std::string toString() const override;
 
-		OsiModelLayer getOsiModelLayer() const { return OsiModelDataLinkLayer; }
+		OsiModelLayer getOsiModelLayer() const override
+		{
+			return OsiModelDataLinkLayer;
+		}
 
 		/**
 		 * A static method that validates the input data
@@ -124,6 +149,4 @@ namespace pcpp
 		static bool isDataValid(const uint8_t* data, size_t dataLen);
 	};
 
-} // namespace pcpp
-
-#endif // PACKETPP_ETH_DOT3_LAYER
+}  // namespace pcpp

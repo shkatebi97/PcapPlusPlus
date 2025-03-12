@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <getopt.h>
 #include "PcapPlusPlusVersion.h"
 #include "PcppTestFrameworkRun.h"
@@ -7,31 +5,31 @@
 #include "Logger.h"
 #include "../../Tests/Packet++Test/Utils/TestUtils.h"
 
-static struct option PacketTestOptions[] =
-{
-	{"include-tags",  required_argument, nullptr, 't'},
-	{"exclude-tags",  required_argument, nullptr, 'x'},
-	{"show-skipped-tests", no_argument, nullptr, 'w' },
-	{"mem-verbose", no_argument, nullptr, 'm' },
-	{"verbose", no_argument, nullptr, 'v' },
-	{"skip-mem-leak-check", no_argument, nullptr, 's' },
-	{"help", no_argument, nullptr, 'h' },
-	{nullptr, 0, nullptr, 0}
+static struct option PacketTestOptions[] = {
+	{ "include-tags",        required_argument, nullptr, 't' },
+	{ "exclude-tags",        required_argument, nullptr, 'x' },
+	{ "show-skipped-tests",  no_argument,       nullptr, 'w' },
+	{ "mem-verbose",         no_argument,       nullptr, 'm' },
+	{ "verbose",             no_argument,       nullptr, 'v' },
+	{ "skip-mem-leak-check", no_argument,       nullptr, 's' },
+	// clang-format off
+	{ "help",                no_argument,       nullptr, 'h' },
+	{ nullptr,               0,                 nullptr, 0   }
+	// clang-format on
 };
 
 void printUsage()
 {
 	std::cout << "Usage: Packet++Test [-t tags] [-m] [-s] [-v] [-h]\n\n"
-			<< "Flags:\n"
-			<< "-t --include-tags        A list of semicolon separated tags for tests to run\n"
-			<< "-x --exclude-tags        A list of semicolon separated tags for tests to exclude\n"
-			<< "-w --show-skipped-tests  Show tests that are skipped. Default is to hide them in tests results\n"
-			<< "-v --verbose             Run in verbose mode (emits more output in several tests)\n"
-			<< "-m --mem-verbose         Output information about each memory allocation and deallocation\n"
-			<< "-s --skip-mem-leak-check Skip memory leak check\n"
-			<< "-h --help                Display this help message and exit\n";
+	          << "Flags:\n"
+	          << "-t --include-tags        A list of semicolon separated tags for tests to run\n"
+	          << "-x --exclude-tags        A list of semicolon separated tags for tests to exclude\n"
+	          << "-w --show-skipped-tests  Show tests that are skipped. Default is to hide them in tests results\n"
+	          << "-v --verbose             Run in verbose mode (emits more output in several tests)\n"
+	          << "-m --mem-verbose         Output information about each memory allocation and deallocation\n"
+	          << "-s --skip-mem-leak-check Skip memory leak check\n"
+	          << "-h --help                Display this help message and exit\n";
 }
-
 
 int main(int argc, char* argv[])
 {
@@ -41,48 +39,50 @@ int main(int argc, char* argv[])
 	bool memVerbose = false;
 	bool skipMemLeakCheck = false;
 
-	while((opt = getopt_long(argc, argv, "msvwht:x:", PacketTestOptions, &optionIndex)) != -1)
+	while ((opt = getopt_long(argc, argv, "msvwht:x:", PacketTestOptions, &optionIndex)) != -1)
 	{
 		switch (opt)
 		{
-			case 0:
-				break;
-			case 't':
-				userTagsInclude = optarg;
-				break;
-			case 'x':
-				userTagsExclude = optarg;
-				break;
-			case 's':
-				skipMemLeakCheck = true;
-				break;
-			case 'm':
-				memVerbose = true;
-				break;
-			case 'w':
-				PTF_SHOW_SKIPPED_TESTS(true);
-				break;
-			case 'v':
-				PTF_SET_VERBOSE_MODE(true);
-				break;
-			case 'h':
-				printUsage();
-				exit(0);
-			default:
-				printUsage();
-				exit(-1);
+		case 0:
+			break;
+		case 't':
+			userTagsInclude = optarg;
+			break;
+		case 'x':
+			userTagsExclude = optarg;
+			break;
+		case 's':
+			skipMemLeakCheck = true;
+			break;
+		case 'm':
+			memVerbose = true;
+			break;
+		case 'w':
+			PTF_SHOW_SKIPPED_TESTS(true);
+			break;
+		case 'v':
+			PTF_SET_VERBOSE_MODE(true);
+			break;
+		case 'h':
+			printUsage();
+			exit(0);
+		default:
+			printUsage();
+			exit(-1);
 		}
 	}
 
 	std::cout << "PcapPlusPlus version: " << pcpp::getPcapPlusPlusVersionFull() << std::endl
-	<< "Built: " << pcpp::getBuildDateTime() << std::endl
-	<< "Built from: " << pcpp::getGitInfo() << std::endl;
+	          << "Built: " << pcpp::getBuildDateTime() << std::endl
+	          << "Built from: " << pcpp::getGitInfo() << std::endl;
 
-	#ifdef NDEBUG
+#ifdef NDEBUG
 	skipMemLeakCheck = true;
-	std::cout << "Disabling memory leak check in MSVC Release builds due to caching logic in stream objects that looks like a memory leak:" << std::endl
-	<< "     https://github.com/cpputest/cpputest/issues/786#issuecomment-148921958" << std::endl;
-	#endif
+	std::cout
+	    << "Disabling memory leak check in MSVC Release builds due to caching logic in stream objects that looks like a memory leak:"
+	    << std::endl
+	    << "     https://github.com/cpputest/cpputest/issues/786#issuecomment-148921958" << std::endl;
+#endif
 
 	// The logger singleton looks like a memory leak. Invoke it before starting the memory check
 	pcpp::Logger::getInstance();
@@ -157,7 +157,9 @@ int main(int argc, char* argv[])
 	PTF_RUN_TEST(ParsePartialPacketTest, "packet;partial_packet");
 	PTF_RUN_TEST(PacketTrailerTest, "packet;packet_trailer");
 	PTF_RUN_TEST(ResizeLayerTest, "packet;resize");
-	PTF_RUN_TEST(PrintPacketAndLayers, "packet;print");
+	PTF_RUN_TEST(PrintPacketAndLayersTest, "packet;print");
+	PTF_RUN_TEST(ProtocolFamilyMembershipTest, "packet");
+	PTF_RUN_TEST(PacketParseLayerLimitTest, "packet");
 
 	PTF_RUN_TEST(HttpRequestParseMethodTest, "http");
 	PTF_RUN_TEST(HttpRequestLayerParsingTest, "http");
@@ -238,6 +240,7 @@ int main(int argc, char* argv[])
 	PTF_RUN_TEST(SipResponseLayerParsingTest, "sip");
 	PTF_RUN_TEST(SipResponseLayerCreationTest, "sip");
 	PTF_RUN_TEST(SipResponseLayerEditTest, "sip");
+	PTF_RUN_TEST(SipNotSdpLayerParsingTest, "sip");
 	PTF_RUN_TEST(SdpLayerParsingTest, "sdp");
 	PTF_RUN_TEST(SdpLayerCreationTest, "sdp");
 	PTF_RUN_TEST(SdpLayerEditTest, "sdp");
@@ -246,9 +249,12 @@ int main(int argc, char* argv[])
 	PTF_RUN_TEST(RadiusLayerCreationTest, "radius");
 	PTF_RUN_TEST(RadiusLayerEditTest, "radius");
 
-	PTF_RUN_TEST(GtpLayerParsingTest, "gtp");
-	PTF_RUN_TEST(GtpLayerCreationTest, "gtp");
-	PTF_RUN_TEST(GtpLayerEditTest, "gtp");
+	PTF_RUN_TEST(GtpV1LayerParsingTest, "gtp");
+	PTF_RUN_TEST(GtpV1LayerCreationTest, "gtp");
+	PTF_RUN_TEST(GtpV1LayerEditTest, "gtp");
+	PTF_RUN_TEST(GtpV2LayerParsingTest, "gtp");
+	PTF_RUN_TEST(GtpV2LayerCreationTest, "gtp");
+	PTF_RUN_TEST(GtpV2LayerEditTest, "gtp");
 
 	PTF_RUN_TEST(BgpLayerParsingTest, "bgp");
 	PTF_RUN_TEST(BgpLayerCreationTest, "bgp");
@@ -315,6 +321,26 @@ int main(int argc, char* argv[])
 	PTF_RUN_TEST(VrrpCreateAndEditTest, "vrrp");
 
 	PTF_RUN_TEST(CotpLayerTest, "cotp");
+
+	PTF_RUN_TEST(S7CommLayerParsingTest, "s7comm");
+	PTF_RUN_TEST(S7CommLayerCreationTest, "s7comm");
+
+	PTF_RUN_TEST(SmtpParsingTests, "smtp");
+	PTF_RUN_TEST(SmtpCreationTests, "smtp");
+	PTF_RUN_TEST(SmtpEditTests, "smtp");
+
+	PTF_RUN_TEST(Asn1DecodingTest, "asn1");
+	PTF_RUN_TEST(Asn1EncodingTest, "asn1");
+
+	PTF_RUN_TEST(LdapParsingTest, "ldap");
+	PTF_RUN_TEST(LdapCreationTest, "ldap");
+
+	PTF_RUN_TEST(WireGuardHandshakeInitParsingTest, "wg");
+	PTF_RUN_TEST(WireGuardHandshakeRespParsingTest, "wg");
+	PTF_RUN_TEST(WireGuardCookieReplyParsingTest, "wg");
+	PTF_RUN_TEST(WireGuardTransportDataParsingTest, "wg");
+	PTF_RUN_TEST(WireGuardCreationTest, "wg");
+	PTF_RUN_TEST(WireGuardEditTest, "wg");
 
 	PTF_END_RUNNING_TESTS;
 }

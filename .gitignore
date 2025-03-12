@@ -23,6 +23,7 @@
 *.pcapng.zst
 *.pcapng.zstd
 *.cap
+*.snoop
 
 #Bin and Obj directories
 **/Bin
@@ -61,6 +62,7 @@ Tests/Pcap++Test/cUrl/curl_output.txt
 *.VC.db
 *.vcxproj.user
 **/.vs
+CMakeSettings.json
 
 #Visual Studio Projects
 mk/vs2015/**
@@ -73,3 +75,6 @@ Examples/Tutorials/**/*.exe
 #venv
 .venv/**
 venv/**
+
+#MacOS system files
+**/.DS_Store

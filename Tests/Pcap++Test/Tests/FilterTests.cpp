@@ -4,6 +4,7 @@
 #include "EthLayer.h"
 #include "VlanLayer.h"
 #include "IPv4Layer.h"
+#include "IPv6Layer.h"
 #include "TcpLayer.h"
 #include "UdpLayer.h"
 #include "PcapLiveDeviceList.h"
@@ -13,7 +14,6 @@
 #include "../Common/TestUtils.h"
 
 extern PcapTestArgs PcapTestGlobalArgs;
-
 
 static int incSleep(const pcpp::RawPacketVector& capturedPackets, size_t expectedPacketCount, int maxTimeToSleep)
 {
@@ -32,8 +32,6 @@ static int incSleep(const pcpp::RawPacketVector& capturedPackets, size_t expecte
 	return totalSleepTime;
 }
 
-
-
 PTF_TEST_CASE(TestPcapFiltersLive)
 {
 	pcpp::PcapLiveDevice* liveDev = nullptr;
@@ -47,7 +45,7 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	pcpp::RawPacketVector capturedPackets;
 
 	//-----------
-	//IP filter
+	// IP filter
 	//-----------
 	PTF_PRINT_VERBOSE("Testing IPFilter");
 	std::string filterAddrAsString(PcapTestGlobalArgs.ipToSendReceivePackets);
@@ -56,12 +54,11 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	PTF_ASSERT_TRUE(liveDev->setFilter(ipFilter));
 	PTF_ASSERT_TRUE(liveDev->startCapture(capturedPackets));
 	PTF_ASSERT_TRUE(sendURLRequest("www.google.com"));
-	//let the capture work for couple of seconds
+	// let the capture work for couple of seconds
 	int totalSleepTime = incSleep(capturedPackets, 2, 7);
 	PTF_PRINT_VERBOSE("Total sleep time: " << totalSleepTime);
 	liveDev->stopCapture();
 	PTF_ASSERT_GREATER_OR_EQUAL_THAN(capturedPackets.size(), 2);
-
 
 	for (pcpp::RawPacketVector::VectorIterator iter = capturedPackets.begin(); iter != capturedPackets.end(); iter++)
 	{
@@ -72,9 +69,8 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	}
 	capturedPackets.clear();
 
-
 	//------------
-	//Port filter
+	// Port filter
 	//------------
 	PTF_PRINT_VERBOSE("Testing PortFilter");
 	uint16_t filterPort = 80;
@@ -83,7 +79,7 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	PTF_ASSERT_TRUE(liveDev->setFilter(portFilter));
 	PTF_ASSERT_TRUE(liveDev->startCapture(capturedPackets));
 	PTF_ASSERT_TRUE(sendURLRequest("www.yahoo.com"));
-	//let the capture work for couple of seconds
+	// let the capture work for couple of seconds
 	totalSleepTime = incSleep(capturedPackets, 2, 7);
 	PTF_PRINT_VERBOSE("Total sleep time: " << totalSleepTime);
 	liveDev->stopCapture();
@@ -97,9 +93,8 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	}
 	capturedPackets.clear();
 
-
 	//----------------
-	//IP & Port filter
+	// IP & Port filter
 	//----------------
 	PTF_PRINT_VERBOSE("Testing IP and Port Filter");
 	std::vector<pcpp::GeneralFilter*> andFilterFilters;
@@ -110,7 +105,7 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	PTF_ASSERT_TRUE(liveDev->setFilter(andFilter));
 	PTF_ASSERT_TRUE(liveDev->startCapture(capturedPackets));
 	PTF_ASSERT_TRUE(sendURLRequest("www.walla.co.il"));
-	//let the capture work for couple of seconds
+	// let the capture work for couple of seconds
 	totalSleepTime = incSleep(capturedPackets, 2, 7);
 	PTF_PRINT_VERBOSE("Total sleep time: " << totalSleepTime);
 	liveDev->stopCapture();
@@ -127,9 +122,8 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	}
 	capturedPackets.clear();
 
-
 	//-----------------
-	//IP || Port filter
+	// IP || Port filter
 	//-----------------
 	PTF_PRINT_VERBOSE("Testing IP or Port Filter");
 	std::vector<pcpp::GeneralFilter*> orFilterFilters;
@@ -141,7 +135,7 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	PTF_ASSERT_TRUE(liveDev->setFilter(orFilter));
 	PTF_ASSERT_TRUE(liveDev->startCapture(capturedPackets));
 	PTF_ASSERT_TRUE(sendURLRequest("www.youtube.com"));
-	//let the capture work for couple of seconds
+	// let the capture work for couple of seconds
 	totalSleepTime = incSleep(capturedPackets, 2, 7);
 	PTF_PRINT_VERBOSE("Total sleep time: " << totalSleepTime);
 	liveDev->stopCapture();
@@ -170,9 +164,8 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	}
 	capturedPackets.clear();
 
-
 	//----------
-	//Not filter
+	// Not filter
 	//----------
 	PTF_PRINT_VERBOSE("Testing Not IP Filter");
 	ipFilter.setDirection(pcpp::SRC);
@@ -181,7 +174,7 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	PTF_ASSERT_TRUE(liveDev->setFilter(notFilter));
 	PTF_ASSERT_TRUE(liveDev->startCapture(capturedPackets));
 	PTF_ASSERT_TRUE(sendURLRequest("www.ebay.com"));
-	//let the capture work for couple of seconds
+	// let the capture work for couple of seconds
 	totalSleepTime = incSleep(capturedPackets, 2, 7);
 	PTF_PRINT_VERBOSE("Total sleep time: " << totalSleepTime);
 	liveDev->stopCapture();
@@ -197,13 +190,9 @@ PTF_TEST_CASE(TestPcapFiltersLive)
 	}
 	capturedPackets.clear();
 
-
 	liveDev->close();
 
-} // TestPcapFiltersLive
-
-
-
+}  // TestPcapFiltersLive
 
 PTF_TEST_CASE(TestPcapFilters_General_BPFStr)
 {
@@ -213,14 +202,14 @@ PTF_TEST_CASE(TestPcapFilters_General_BPFStr)
 	pcpp::PcapFileReaderDevice fileReaderDev(EXAMPLE_PCAP_VLAN);
 
 	//------------------------------------
-	//Test GeneralFilter + BPFStringFilter
+	// Test GeneralFilter + BPFStringFilter
 	//------------------------------------
 
-	//Try to make an invalid filter
+	// Try to make an invalid filter
 	pcpp::BPFStringFilter badFilter("This is not a valid filter");
 	PTF_ASSERT_FALSE(badFilter.verifyFilter());
 
-	//Test stolen from MacAddress test below
+	// Test stolen from MacAddress test below
 	pcpp::MacAddress macAddr("00:13:c3:df:ae:18");
 	pcpp::BPFStringFilter bpfStringFilter("ether dst " + macAddr.toString());
 	PTF_ASSERT_TRUE(bpfStringFilter.verifyFilter());
@@ -246,10 +235,7 @@ PTF_TEST_CASE(TestPcapFilters_General_BPFStr)
 	PTF_ASSERT_EQUAL(validCounter, 5);
 
 	rawPacketVec.clear();
-} // TestPcapFilters_General_BPFStr
-
-
-
+}  // TestPcapFilters_General_BPFStr
 
 PTF_TEST_CASE(TestPcapFilters_MatchStatic)
 {
@@ -269,10 +255,7 @@ PTF_TEST_CASE(TestPcapFilters_MatchStatic)
 	}
 
 	rawPacketVec.clear();
-} // TestPcapFilters_MatchStatic
-
-
-
+}  // TestPcapFilters_MatchStatic
 
 PTF_TEST_CASE(TestPcapFiltersOffline)
 {
@@ -285,7 +268,7 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 	pcpp::PcapFileReaderDevice fileReaderDev4(EXAMPLE_PCAP_IGMP);
 
 	//-----------------
-	//VLAN filter
+	// VLAN filter
 	//-----------------
 
 	pcpp::VlanFilter vlanFilter(118);
@@ -307,9 +290,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//--------------------
-	//MacAddress filter
+	// MacAddress filter
 	//--------------------
 	pcpp::MacAddress macAddrToFilter("00:13:c3:df:ae:18");
 	pcpp::MacAddressFilter macAddrFilter(macAddrToFilter, pcpp::DST);
@@ -330,9 +312,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//--------------------
-	//EtherType filter
+	// EtherType filter
 	//--------------------
 	pcpp::EtherTypeFilter ethTypeFiler(PCPP_ETHERTYPE_VLAN);
 	ethTypeFiler.parseToString(filterAsString);
@@ -351,9 +332,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//--------------------
-	//IPv4 ID filter
+	// IPv4 ID filter
 	//--------------------
 	uint16_t ipID(0x9900);
 	pcpp::IPv4IDFilter ipIDFiler(ipID, pcpp::GREATER_THAN);
@@ -375,9 +355,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//-------------------------
-	//IPv4 Total Length filter
+	// IPv4 Total Length filter
 	//-------------------------
 	uint16_t totalLength(576);
 	pcpp::IPv4TotalLengthFilter ipTotalLengthFiler(totalLength, pcpp::LESS_OR_EQUAL);
@@ -399,9 +378,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//-------------------------
-	//TCP window size filter
+	// TCP window size filter
 	//-------------------------
 	uint16_t windowSize(8312);
 	pcpp::TcpWindowSizeFilter tcpWindowSizeFilter(windowSize, pcpp::NOT_EQUALS);
@@ -423,9 +401,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//-------------------------
-	//UDP length filter
+	// UDP length filter
 	//-------------------------
 	uint16_t udpLength(46);
 	pcpp::UdpLengthFilter udpLengthFilter(udpLength, pcpp::EQUALS);
@@ -447,12 +424,15 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//-------------------------
-	//IP filter with mask
+	// IP filter with mask
 	//-------------------------
 	pcpp::IPFilter ipFilterWithMask("212.199.202.9", pcpp::SRC, "255.255.255.0");
 	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip and src net 212.199.202.0/24");
+
+	PTF_ASSERT_RAISES(ipFilterWithMask.setAddr("BogusIPAddressString"), std::invalid_argument,
+	                  "Not a valid IP address: BogusIPAddressString");
 
 	PTF_ASSERT_TRUE(fileReaderDev2.open());
 	PTF_ASSERT_TRUE(fileReaderDev2.setFilter(ipFilterWithMask));
@@ -470,10 +450,19 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
+	ipFilterWithMask.clearMask();
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip and src net 212.199.202.9/32");
 
+	ipFilterWithMask = pcpp::IPFilter(pcpp::IPNetwork("212.199.202.9/24"), pcpp::Direction::DST);
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip and dst net 212.199.202.0/24");
+
+	ipFilterWithMask.setDirection(pcpp::Direction::SRC);
 	ipFilterWithMask.setLen(24);
 	ipFilterWithMask.setAddr("212.199.202.9");
 	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip and src net 212.199.202.0/24");
 
 	PTF_ASSERT_TRUE(fileReaderDev2.open());
 	PTF_ASSERT_TRUE(fileReaderDev2.setFilter(ipFilterWithMask));
@@ -490,9 +479,74 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 	}
 	rawPacketVec.clear();
 
+	ipFilterWithMask.clearLen();
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip and src net 212.199.202.9/32");
+
+	// IPv6 tests
+
+	ipFilterWithMask.setMask("255.255.255.0");
+	ipFilterWithMask.setAddr("2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF");
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip6 and src net 2001:d00::/24");
+	ipFilterWithMask.clearMask();
+
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip6 and src net 2001:db8:3333:4444:cccc:dddd:eeee:ffff/128");
+
+	PTF_ASSERT_RAISES(ipFilterWithMask.setMask("255.255.255.255"), std::invalid_argument,
+	                  "Netmask is not valid IPv6 format: 255.255.255.255");
+	ipFilterWithMask.setMask("ffff:ffff:ffff::");
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip6 and src net 2001:db8:3333::/48");
+
+	ipFilterWithMask.setNetwork(pcpp::IPNetwork("2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF/64"));
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip6 and src net 2001:db8:3333:4444::/64");
+
+	ipFilterWithMask.setLen(48);
+	ipFilterWithMask.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "ip6 and src net 2001:db8:3333::/48");
+
+	ipFilterWithMask.setAddr("2001:db8:0:12::1");
+	ipFilterWithMask.clearLen();
+	ipFilterWithMask.clearMask();
+	pcpp::PcapFileReaderDevice fileReaderDev5(EXAMPLE_PCAP_IPV6_PATH);
+
+	PTF_ASSERT_TRUE(fileReaderDev5.open());
+	PTF_ASSERT_TRUE(fileReaderDev5.setFilter(ipFilterWithMask));
+	fileReaderDev5.getNextPackets(rawPacketVec);
+	fileReaderDev5.close();
+
+	PTF_ASSERT_EQUAL(rawPacketVec.size(), 5);
+	for (pcpp::RawPacketVector::VectorIterator iter = rawPacketVec.begin(); iter != rawPacketVec.end(); iter++)
+	{
+		pcpp::Packet packet(*iter);
+		PTF_ASSERT_TRUE(packet.isPacketOfType(pcpp::IPv6));
+		pcpp::IPv6Layer* ipLayer = packet.getLayerOfType<pcpp::IPv6Layer>();
+		// This is essentially matching the host address, but it will have to do for the current sample.
+		PTF_ASSERT_TRUE(ipLayer->getSrcIPv6Address().matchNetwork("2001:db8:0:12::1/128"));
+	}
+	rawPacketVec.clear();
+	ipFilterWithMask.setLen(64);
+
+	PTF_ASSERT_TRUE(fileReaderDev5.open());
+	PTF_ASSERT_TRUE(fileReaderDev5.setFilter(ipFilterWithMask));
+	fileReaderDev5.getNextPackets(rawPacketVec);
+	fileReaderDev5.close();
+
+	PTF_ASSERT_EQUAL(rawPacketVec.size(), 10);
+	for (pcpp::RawPacketVector::VectorIterator iter = rawPacketVec.begin(); iter != rawPacketVec.end(); iter++)
+	{
+		pcpp::Packet packet(*iter);
+		PTF_ASSERT_TRUE(packet.isPacketOfType(pcpp::IPv6));
+		pcpp::IPv6Layer* ipLayer = packet.getLayerOfType<pcpp::IPv6Layer>();
+		PTF_ASSERT_TRUE(ipLayer->getSrcIPv6Address().matchNetwork("2001:db8:0:12::/64"));
+	}
+	rawPacketVec.clear();
 
 	//-------------
-	//Port range
+	// Port range
 	//-------------
 	pcpp::PortRangeFilter portRangeFilter(40000, 50000, pcpp::SRC);
 	portRangeFilter.parseToString(filterAsString);
@@ -512,22 +566,21 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 		{
 			pcpp::TcpLayer* tcpLayer = packet.getLayerOfType<pcpp::TcpLayer>();
 			uint16_t portSrc = tcpLayer->getSrcPort();
-			PTF_ASSERT_TRUE(portSrc >= 40000 && portSrc <=50000);
+			PTF_ASSERT_TRUE(portSrc >= 40000 && portSrc <= 50000);
 		}
 		else if (packet.isPacketOfType(pcpp::UDP))
 		{
 			pcpp::UdpLayer* udpLayer = packet.getLayerOfType<pcpp::UdpLayer>();
 			uint16_t portSrc = udpLayer->getSrcPort();
-			PTF_ASSERT_TRUE(portSrc >= 40000 && portSrc <=50000);
+			PTF_ASSERT_TRUE(portSrc >= 40000 && portSrc <= 50000);
 		}
 	}
 	rawPacketVec.clear();
 
-
 	//-------------------------
-	//TCP flags filter
+	// TCP flags filter
 	//-------------------------
-	uint8_t tcpFlagsBitMask(pcpp::TcpFlagsFilter::tcpSyn|pcpp::TcpFlagsFilter::tcpAck);
+	uint8_t tcpFlagsBitMask(pcpp::TcpFlagsFilter::tcpSyn | pcpp::TcpFlagsFilter::tcpAck);
 	pcpp::TcpFlagsFilter tcpFlagsFilter(tcpFlagsBitMask, pcpp::TcpFlagsFilter::MatchAll);
 	tcpFlagsFilter.parseToString(filterAsString);
 
@@ -566,9 +619,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//------------
-	//Proto filter
+	// Proto filter
 	//------------
 
 	// ARP proto
@@ -656,9 +708,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 	}
 	rawPacketVec.clear();
 
-
 	//-----------------------
-	//And filter - Proto + IP
+	// And filter - Proto + IP
 	//-----------------------
 
 	pcpp::IPFilter ipFilter("10.0.0.6", pcpp::SRC);
@@ -668,6 +719,29 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 	filterVec.push_back(&protoFilter);
 	pcpp::AndFilter andFilter(filterVec);
 	andFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "(ip and src net 10.0.0.6/32) and (udp)");
+
+	andFilter.addFilter(&ipFilter);
+	andFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "(ip and src net 10.0.0.6/32) and (udp) and (ip and src net 10.0.0.6/32)");
+
+	andFilter.removeFilter(&ipFilter);
+	andFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "(udp) and (ip and src net 10.0.0.6/32)");
+
+	{
+		pcpp::OrFilter externalFilter;
+		andFilter.removeFilter(&externalFilter);
+		PTF_ASSERT_EQUAL(filterAsString, "(udp) and (ip and src net 10.0.0.6/32)");
+	}
+
+	andFilter.clearAllFilters();
+	andFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "");
+
+	andFilter.setFilters(filterVec);
+	andFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "(ip and src net 10.0.0.6/32) and (udp)");
 
 	PTF_ASSERT_TRUE(fileReaderDev2.open());
 	PTF_ASSERT_TRUE(fileReaderDev2.setFilter(andFilter));
@@ -686,9 +760,8 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 
 	rawPacketVec.clear();
 
-
 	//------------------------------------------
-	//Complex filter - (Proto1 and IP) || Proto2
+	// Complex filter - (Proto1 and IP) || Proto2
 	//------------------------------------------
 
 	protoFilter.setProto(pcpp::GRE);
@@ -707,6 +780,7 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 	pcpp::OrFilter orFilter(filterVec);
 
 	orFilter.parseToString(filterAsString);
+	PTF_ASSERT_EQUAL(filterAsString, "(arp) or ((proto 47) and (ip and src or dst net 20.0.0.1/32))");
 
 	PTF_ASSERT_TRUE(fileReaderDev3.open());
 	PTF_ASSERT_TRUE(fileReaderDev3.setFilter(orFilter));
@@ -726,9 +800,9 @@ PTF_TEST_CASE(TestPcapFiltersOffline)
 			PTF_ASSERT_TRUE(packet.isPacketOfType(pcpp::GRE));
 			PTF_ASSERT_TRUE(packet.isPacketOfType(pcpp::IPv4));
 			pcpp::IPv4Layer* ipv4Layer = packet.getLayerOfType<pcpp::IPv4Layer>();
-			PTF_ASSERT_TRUE(ipv4Layer->getSrcIPAddress().toString() == "20.0.0.1" || ipv4Layer->getDstIPAddress().toString() == "20.0.0.1");
+			PTF_ASSERT_TRUE(ipv4Layer->getSrcIPAddress().toString() == "20.0.0.1" ||
+			                ipv4Layer->getDstIPAddress().toString() == "20.0.0.1");
 		}
-
 	}
 	rawPacketVec.clear();
 }
@@ -748,12 +822,13 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	for (pcpp::RawPacketVector::VectorIterator iter = rawPacketVec.begin(); iter != rawPacketVec.end(); iter++)
 	{
 		pcpp::Packet packet(*iter);
-		if(pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
+		if (pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
 		{
-			pcpp::BPFStringFilter bpfStringFilter("host " + ip4layer->getDstIPAddress().toString()); // checking against real filter, not the "" filter
+			pcpp::BPFStringFilter bpfStringFilter(
+			    "host " + ip4layer->getDstIPAddress().toString());  // checking against real filter, not the "" filter
 			if (bpfStringFilter.matchPacketWithFilter(*iter))
 			{
-				if((*iter)->getLinkLayerType() == pcpp::LINKTYPE_DLT_RAW1)
+				if ((*iter)->getLinkLayerType() == pcpp::LINKTYPE_DLT_RAW1)
 				{
 					++validCounter;
 				}
@@ -762,7 +837,6 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	}
 	PTF_ASSERT_EQUAL(validCounter, 50);
 	rawPacketVec.clear();
-
 
 	// pcpp::LINKTYPE_LINUX_SLL layer
 	pcpp::PcapFileReaderDevice fileReaderDev2(SLL_PCAP_PATH);
@@ -774,12 +848,13 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	for (pcpp::RawPacketVector::VectorIterator iter = rawPacketVec.begin(); iter != rawPacketVec.end(); iter++)
 	{
 		pcpp::Packet packet(*iter);
-		if(pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
+		if (pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
 		{
-			pcpp::BPFStringFilter bpfStringFilter("host " + ip4layer->getDstIPAddress().toString()); // checking against real filter, not the "" filter
+			pcpp::BPFStringFilter bpfStringFilter(
+			    "host " + ip4layer->getDstIPAddress().toString());  // checking against real filter, not the "" filter
 			if (bpfStringFilter.matchPacketWithFilter(*iter))
 			{
-				if((*iter)->getLinkLayerType() == pcpp::LINKTYPE_LINUX_SLL)
+				if ((*iter)->getLinkLayerType() == pcpp::LINKTYPE_LINUX_SLL)
 				{
 					++validCounter;
 				}
@@ -788,7 +863,6 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	}
 	PTF_ASSERT_EQUAL(validCounter, 510);
 	rawPacketVec.clear();
-
 
 	// pcpp::LINKTYPE_ETHERNET layer
 	pcpp::PcapNgFileReaderDevice fileReaderDev3(EXAMPLE_PCAPNG_PATH);
@@ -800,12 +874,13 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	for (pcpp::RawPacketVector::VectorIterator iter = rawPacketVec.begin(); iter != rawPacketVec.end(); iter++)
 	{
 		pcpp::Packet packet(*iter);
-		if(pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
+		if (pcpp::IPv4Layer* ip4layer = packet.getLayerOfType<pcpp::IPv4Layer>())
 		{
-			pcpp::BPFStringFilter bpfStringFilter("host " + ip4layer->getDstIPAddress().toString()); // checking against real filter, not the "" filter
+			pcpp::BPFStringFilter bpfStringFilter(
+			    "host " + ip4layer->getDstIPAddress().toString());  // checking against real filter, not the "" filter
 			if (bpfStringFilter.matchPacketWithFilter(*iter))
 			{
-				if((*iter)->getLinkLayerType() == pcpp::LINKTYPE_ETHERNET)
+				if ((*iter)->getLinkLayerType() == pcpp::LINKTYPE_ETHERNET)
 				{
 					++validCounter;
 				}
@@ -814,4 +889,4 @@ PTF_TEST_CASE(TestPcapFilters_LinkLayer)
 	}
 	PTF_ASSERT_EQUAL(validCounter, 62);
 	rawPacketVec.clear();
-} // TestPcapFilters_LinkLayer
+}  // TestPcapFilters_LinkLayer

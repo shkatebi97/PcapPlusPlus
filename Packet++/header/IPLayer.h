@@ -1,5 +1,4 @@
-#ifndef PACKETPP_IP_LAYER
-#define PACKETPP_IP_LAYER
+#pragma once
 
 #include "IpAddress.h"
 #include "Layer.h"
@@ -22,7 +21,8 @@ namespace pcpp
 	class IPLayer
 	{
 	protected:
-		IPLayer() {}
+		IPLayer() = default;
+
 	public:
 		/**
 		 * An abstract method to get the source IP address
@@ -39,8 +39,6 @@ namespace pcpp
 		/**
 		 * An empty destructor
 		 */
-		virtual ~IPLayer() {}
+		virtual ~IPLayer() = default;
 	};
-}
-
-#endif // PACKETPP_IP_LAYER
+}  // namespace pcpp

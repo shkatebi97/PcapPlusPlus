@@ -1,5 +1,4 @@
-#ifndef PACKETPP_TPKT_LAYER
-#define PACKETPP_TPKT_LAYER
+#pragma once
 
 #include "EthLayer.h"
 #include "Layer.h"
@@ -35,7 +34,7 @@ namespace pcpp
 	 */
 	class TpktLayer : public Layer
 	{
-	  public:
+	public:
 		/**
 		 * A constructor that creates the layer from an existing packet raw data
 		 * @param[in] data A pointer to the raw data (will be casted to @ref tpkthdr)
@@ -43,11 +42,9 @@ namespace pcpp
 		 * @param[in] prevLayer A pointer to the previous layer
 		 * @param[in] packet A pointer to the Packet instance where layer will be stored in
 		 */
-		TpktLayer(uint8_t *data, size_t dataLen, Layer *prevLayer, Packet *packet)
-			: Layer(data, dataLen, prevLayer, packet)
-		{
-			m_Protocol = TPKT;
-		}
+		TpktLayer(uint8_t* data, size_t dataLen, Layer* prevLayer, Packet* packet)
+		    : Layer(data, dataLen, prevLayer, packet, TPKT)
+		{}
 
 		/**
 		 * A constructor that allocates a new TPKT header
@@ -56,7 +53,7 @@ namespace pcpp
 		 */
 		TpktLayer(uint8_t version, uint16_t length);
 
-		virtual ~TpktLayer() {}
+		~TpktLayer() override = default;
 
 		/**
 		 * @return TPKT reserved
@@ -88,12 +85,16 @@ namespace pcpp
 		/**
 		 * @return Size of @ref tpkthdr
 		 */
-		size_t getHeaderLen() const override { return sizeof(tpkthdr); }
+		size_t getHeaderLen() const override
+		{
+			return sizeof(tpkthdr);
+		}
 
 		/**
 		 * Does nothing for this layer
 		 */
-		void computeCalculateFields() override {}
+		void computeCalculateFields() override
+		{}
 
 		/**
 		 * Currently parses the rest of the packet as a COTP protocol or generic payload (PayloadLayer)
@@ -106,7 +107,10 @@ namespace pcpp
 		 * @param[in] portDst Dest port number to check
 		 * @return True if the source or dest port match those associated with the TPKT protocol
 		 */
-		static bool isTpktPort(uint16_t portSrc, uint16_t portDst) { return portSrc == 102 || portDst == 102; }
+		static bool isTpktPort(uint16_t portSrc, uint16_t portDst)
+		{
+			return portSrc == 102 || portDst == 102;
+		}
 
 		/**
 		 * A static method that takes a byte array and detects whether it is a TPKT message
@@ -114,21 +118,29 @@ namespace pcpp
 		 * @param[in] dataSize The byte array size (in bytes)
 		 * @return True if the data size is greater or equal than the size of tpkthdr
 		 */
-		static bool isDataValid(const uint8_t *data, size_t dataSize) { return data && dataSize >= sizeof(tpkthdr); }
+		static bool isDataValid(const uint8_t* data, size_t dataSize)
+		{
+			return data && dataSize >= sizeof(tpkthdr);
+		}
 
 		std::string toString() const override;
 
-		OsiModelLayer getOsiModelLayer() const override { return OsiModelTransportLayer; }
+		OsiModelLayer getOsiModelLayer() const override
+		{
+			return OsiModelTransportLayer;
+		}
 
-	  private:
+	private:
 		/**
 		 * Get a pointer to the TPKT header. Data can be retrieved through the
 		 * other methods of this layer. Notice the return value points directly to the data, so every change will change
 		 * the actual packet data
 		 * @return A pointer to the @ref tpkthdr
 		 */
-		tpkthdr *getTpktHeader() const { return (tpkthdr *)m_Data; }
+		tpkthdr* getTpktHeader() const
+		{
+			return reinterpret_cast<tpkthdr*>(m_Data);
+		}
 	};
 
-} // namespace pcpp
-#endif // PACKETPP_TPKT_LAYER
+}  // namespace pcpp

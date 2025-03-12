@@ -1,5 +1,4 @@
-#ifndef PACKETPP_DNS_LAYER_ENUMS
-#define PACKETPP_DNS_LAYER_ENUMS
+#pragma once
 
 /// @file
 
@@ -32,7 +31,7 @@ namespace pcpp
 		DNS_TYPE_MG,
 		/** mail rename domain name record */
 		DNS_TYPE_MR,
-		/** NULL record */
+		/** Null record */
 		DNS_TYPE_NULL_R,
 		/** well known service description record */
 		DNS_TYPE_WKS,
@@ -70,7 +69,7 @@ namespace pcpp
 		DNS_TYPE_GPOS,
 		/** IPv6 address record */
 		DNS_TYPE_AAAA,
-		/**	Location record */
+		/** Location record */
 		DNS_TYPE_LOC,
 		/** Obsolete record */
 		DNS_TYPE_NXT,
@@ -120,7 +119,6 @@ namespace pcpp
 		DNS_TYPE_ALL = 255
 	};
 
-
 	/**
 	 * An enum for all possible DNS classes
 	 */
@@ -138,7 +136,6 @@ namespace pcpp
 		DNS_CLASS_ANY = 255
 	};
 
-
 	/**
 	 * An enum for representing the 4 types of possible DNS records
 	 */
@@ -154,6 +151,4 @@ namespace pcpp
 		DnsAdditionalType = 3
 	};
 
-}
-
-#endif // PACKETPP_DNS_LAYER_ENUMS
+}  // namespace pcpp

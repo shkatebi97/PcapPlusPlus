@@ -1,7 +1,7 @@
 import os
 import subprocess
 import argparse
-import netifaces as ni
+from scapy.all import get_if_addr
 
 PCAP_FILE_PATH = os.path.join("Tests", "Pcap++Test", "PcapExamples", "example.pcap")
 
@@ -32,7 +32,8 @@ def main():
     )
     args = parser.parse_args()
 
-    ip_address = ni.ifaddresses(args.interface)[ni.AF_INET][0]["addr"]
+    ip_address = get_if_addr(args.interface)
+
     print("IP address is: %s" % ip_address)
 
     try:
@@ -49,6 +50,7 @@ def main():
             cwd="Tests/Packet++Test",
         )
         if completed_process.returncode != 0:
+            print("Error while executing Packet++ tests: " + str(completed_process))
             exit(completed_process.returncode)
 
         completed_process = subprocess.run(
@@ -58,6 +60,7 @@ def main():
             cwd="Tests/Pcap++Test",
         )
         if completed_process.returncode != 0:
+            print("Error while executing Pcap++ tests: " + str(completed_process))
             exit(completed_process.returncode)
 
     finally:

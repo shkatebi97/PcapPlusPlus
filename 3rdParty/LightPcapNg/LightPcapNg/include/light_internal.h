@@ -25,10 +25,18 @@
 #define INCLUDE_LIGHT_INTERNAL_H_
 
 #include "light_types.h"
+#include "light_debug.h"
+#include "light_file.h"
 
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
+
+struct _light_pcapng_stream {
+	struct light_file_t *file; // PCPP patch
+	struct _light_pcapng *current_block;
+	int valid;
+};
 
 struct _light_pcapng {
 	uint32_t block_type;

@@ -9,7 +9,7 @@
 #include "UdpLayer.h"
 #include "DnsLayer.h"
 #include "PacketUtils.h"
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -21,7 +21,6 @@
 class Splitter
 {
 public:
-
 	/**
 	 * A method that gets a packet and returns:
 	 * - The file number to write the packet to
@@ -42,19 +41,19 @@ public:
 	 * first packet that will be written to this file. The default implementation is the following:
 	 * ' /requested-path/original-file-name-[4-digit-number-starting-at-0000].pcap'
 	 */
-	virtual std::string getFileName(pcpp::Packet& packet, const std::string &outputPcapBasePath, int fileNumber)
+	virtual std::string getFileName(pcpp::Packet& packet, const std::string& outputPcapBasePath, int fileNumber)
 	{
-	    std::ostringstream sstream;
-	    sstream << std::setw(4) << std::setfill( '0' ) << fileNumber;
+		std::ostringstream sstream;
+		sstream << std::setw(4) << std::setfill('0') << fileNumber;
 		return outputPcapBasePath.c_str() + sstream.str();
 	}
 
 	/**
 	 * A virtual d'tor
 	 */
-	virtual ~Splitter() {}
+	virtual ~Splitter()
+	{}
 };
-
 
 /**
  * A virtual abstract splitter which represent splitters that may or may not have a limit on the number of
@@ -91,10 +90,10 @@ protected:
 
 	/**
 	 * A helper method that is called by child classes and returns the next file number. If there's no output file limit
-	 * it just return prev_file_number+1. But if there is a file limit it return file number in cyclic manner, meaning if
-	 * reached the max file number, the next file number will be 0.
-	 * In addition the method puts the next file in the LRU list and if the list is full it pulls out the least recently
-	 * used file and returns it in filesToClose vector. The application will take care of closing that file
+	 * it just return prev_file_number+1. But if there is a file limit it return file number in cyclic manner, meaning
+	 * if reached the max file number, the next file number will be 0. In addition the method puts the next file in the
+	 * LRU list and if the list is full it pulls out the least recently used file and returns it in filesToClose vector.
+	 * The application will take care of closing that file
 	 */
 	int getNextFileNumber(std::vector<int>& filesToClose)
 	{
@@ -103,12 +102,11 @@ protected:
 		// zero or negative m_MaxFiles means no limit
 		if (m_MaxFiles <= 0)
 			nextFile = m_NextFile++;
-		else // m_MaxFiles is positive, meaning there is a output file limit
+		else  // m_MaxFiles is positive, meaning there is a output file limit
 		{
 			nextFile = (m_NextFile) % m_MaxFiles;
 			m_NextFile++;
 		}
-
 
 		// put the next file in the LRU list
 		int fileToClose;
@@ -121,17 +119,17 @@ protected:
 	}
 
 	/**
-	 * A protected c'tor for this class which gets the output file limit size. If maxFile is UNLIMITED_FILES_MAGIC_NUMBER,
-	 * it's considered there's no output files limit
+	 * A protected c'tor for this class which gets the output file limit size. If maxFile is
+	 * UNLIMITED_FILES_MAGIC_NUMBER, it's considered there's no output files limit
 	 */
-	explicit SplitterWithMaxFiles(int maxFiles, int firstFileNumber = 0) : m_LRUFileList(MAX_NUMBER_OF_CONCURRENT_OPEN_FILES)
+	explicit SplitterWithMaxFiles(int maxFiles, int firstFileNumber = 0)
+	    : m_LRUFileList(MAX_NUMBER_OF_CONCURRENT_OPEN_FILES)
 	{
 		m_MaxFiles = maxFiles;
 		m_NextFile = firstFileNumber;
 	}
 
 public:
-
 	static const int UNLIMITED_FILES_MAGIC_NUMBER = -12345;
 
 	/**
@@ -154,26 +152,26 @@ public:
 	}
 };
 
-
 /**
  * An abstract virtual splitter which represent splitters that needs to keep a mapping between a certain packet value to
  * a certain file number the packet needs to be written to. For example: in client-ip splitter all flows with a
- * certain client-ip should be written to the same file. So this class will enable it to keep a mapping between client-ips
- * and file numbers. This class inherits SplitterWithMaxFiles so it supports having or not having a limit on the number
- * of output files
+ * certain client-ip should be written to the same file. So this class will enable it to keep a mapping between
+ * client-ips and file numbers. This class inherits SplitterWithMaxFiles so it supports having or not having a limit on
+ * the number of output files
  */
 class ValueBasedSplitter : public SplitterWithMaxFiles
 {
 protected:
 	// A flow table that keeps track of all flows (a flow is usually identified by 5-tuple)
-	std::map<uint32_t, int> m_FlowTable;
+	std::unordered_map<uint32_t, int> m_FlowTable;
 	// a map between the relevant packet value (e.g client-ip) and the file to write the packet to
-	std::map<uint32_t, int> m_ValueToFileTable;
+	std::unordered_map<uint32_t, int> m_ValueToFileTable;
 
 	/**
 	 * A protected c'tor for this class that only propagate the maxFiles to its ancestor
 	 */
-	explicit ValueBasedSplitter(int maxFiles) : SplitterWithMaxFiles(maxFiles, 1) {}
+	explicit ValueBasedSplitter(int maxFiles) : SplitterWithMaxFiles(maxFiles, 1)
+	{}
 
 	/**
 	 * A helper method that gets the packet value and returns the file to write it to, and also a file to close if the
@@ -194,3 +192,47 @@ protected:
 		return m_ValueToFileTable[value];
 	}
 };
+
+/**
+ * An auxiliary method for extracting packet's IPv4/IPv6 source address as string
+ */
+std::string getSrcIPString(pcpp::Packet& packet)
+{
+	if (packet.isPacketOfType(pcpp::IP))
+		return packet.getLayerOfType<pcpp::IPLayer>()->getSrcIPAddress().toString();
+	return "miscellaneous";
+}
+
+/**
+ * An auxiliary method for extracting packet's IPv4/IPv6 dest address string
+ */
+std::string getDstIPString(pcpp::Packet& packet)
+{
+	if (packet.isPacketOfType(pcpp::IP))
+		return packet.getLayerOfType<pcpp::IPLayer>()->getDstIPAddress().toString();
+	return "miscellaneous";
+}
+
+/**
+ * An auxiliary method for replacing '.' and ':' in IPv4/IPv6 addresses with '-'
+ */
+std::string hyphenIP(std::string ipVal)
+{
+	// for IPv4 - replace '.' with '-'
+	int loc = ipVal.find(".");
+	while (loc >= 0)
+	{
+		ipVal.replace(loc, 1, "-");
+		loc = ipVal.find(".");
+	}
+
+	// for IPv6 - replace ':' with '-'
+	loc = ipVal.find(":");
+	while (loc >= 0)
+	{
+		ipVal.replace(loc, 1, "-");
+		loc = ipVal.find(":");
+	}
+
+	return ipVal;
+}

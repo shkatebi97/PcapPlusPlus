@@ -56,7 +56,9 @@ PTF_TEST_CASE(RawPacketTimeStampSetterTest);
 PTF_TEST_CASE(ParsePartialPacketTest);
 PTF_TEST_CASE(PacketTrailerTest);
 PTF_TEST_CASE(ResizeLayerTest);
-PTF_TEST_CASE(PrintPacketAndLayers);
+PTF_TEST_CASE(PrintPacketAndLayersTest);
+PTF_TEST_CASE(ProtocolFamilyMembershipTest);
+PTF_TEST_CASE(PacketParseLayerLimitTest);
 
 // Implemented in HttpTests.cpp
 PTF_TEST_CASE(HttpRequestParseMethodTest);
@@ -149,6 +151,7 @@ PTF_TEST_CASE(SipResponseLayerParsingTest);
 PTF_TEST_CASE(SipResponseLayerCreationTest);
 PTF_TEST_CASE(SipResponseLayerEditTest);
 PTF_TEST_CASE(SdpLayerParsingTest);
+PTF_TEST_CASE(SipNotSdpLayerParsingTest);
 PTF_TEST_CASE(SdpLayerCreationTest);
 PTF_TEST_CASE(SdpLayerEditTest);
 
@@ -158,9 +161,12 @@ PTF_TEST_CASE(RadiusLayerCreationTest);
 PTF_TEST_CASE(RadiusLayerEditTest);
 
 // Implemented in GtpTests.cpp
-PTF_TEST_CASE(GtpLayerParsingTest);
-PTF_TEST_CASE(GtpLayerCreationTest);
-PTF_TEST_CASE(GtpLayerEditTest);
+PTF_TEST_CASE(GtpV1LayerParsingTest);
+PTF_TEST_CASE(GtpV1LayerCreationTest);
+PTF_TEST_CASE(GtpV1LayerEditTest);
+PTF_TEST_CASE(GtpV2LayerParsingTest);
+PTF_TEST_CASE(GtpV2LayerCreationTest);
+PTF_TEST_CASE(GtpV2LayerEditTest);
 
 // Implemented in BgpTests.cpp
 PTF_TEST_CASE(BgpLayerParsingTest);
@@ -241,5 +247,30 @@ PTF_TEST_CASE(TpktLayerTest);
 PTF_TEST_CASE(VrrpParsingTest);
 PTF_TEST_CASE(VrrpCreateAndEditTest);
 
-//Implemented in CotpTests.cpp
+// Implemented in CotpTests.cpp
 PTF_TEST_CASE(CotpLayerTest);
+
+// Implemented in S7commTests.cpp
+PTF_TEST_CASE(S7CommLayerParsingTest);
+PTF_TEST_CASE(S7CommLayerCreationTest);
+
+// Implemented in SmtpTests.cpp
+PTF_TEST_CASE(SmtpParsingTests);
+PTF_TEST_CASE(SmtpCreationTests);
+PTF_TEST_CASE(SmtpEditTests);
+
+// Implemented in Asn1Tests.cpp
+PTF_TEST_CASE(Asn1DecodingTest);
+PTF_TEST_CASE(Asn1EncodingTest);
+
+// Implemented in LdapTests.cpp
+PTF_TEST_CASE(LdapParsingTest);
+PTF_TEST_CASE(LdapCreationTest);
+
+// Implemented in WireGuardTests.cpp
+PTF_TEST_CASE(WireGuardHandshakeInitParsingTest);
+PTF_TEST_CASE(WireGuardHandshakeRespParsingTest);
+PTF_TEST_CASE(WireGuardCookieReplyParsingTest);
+PTF_TEST_CASE(WireGuardTransportDataParsingTest);
+PTF_TEST_CASE(WireGuardCreationTest);
+PTF_TEST_CASE(WireGuardEditTest);

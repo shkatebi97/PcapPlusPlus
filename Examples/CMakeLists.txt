@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
 project(PcapPlusPlusExamples)
 
@@ -44,9 +44,15 @@ endif()
 if(PCAPPP_USE_DPDK)
   add_subdirectory(DpdkExample-FilterTraffic)
   add_subdirectory(DpdkBridge)
-  add_subdirectory(KniPong)
+  if(PCAPPP_USE_DPDK_KNI)
+    add_subdirectory(KniPong)
+  endif()
 endif()
 
 if(PCAPPP_USE_PF_RING)
   add_subdirectory(PfRingExample-FilterTraffic)
+endif()
+
+if(PCAPPP_USE_XDP)
+  add_subdirectory(XdpExample-FilterTraffic)
 endif()

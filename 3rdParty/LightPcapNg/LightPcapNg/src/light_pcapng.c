@@ -90,12 +90,12 @@ void parse_by_block_type(struct _light_pcapng *current, const uint32_t *local_da
    switch (current->block_type)
    {
       case LIGHT_SECTION_HEADER_BLOCK:
-      {
+      { // PCPP patch
          DPRINT_HERE(LIGHT_SECTION_HEADER_BLOCK);
          struct _light_section_header *shb = calloc(1, sizeof(struct _light_section_header));
          struct _light_option *opt = NULL;
-         uint32_t version;
-         int32_t local_offset;
+         uint32_t version = 0;
+         int32_t local_offset = 0;
 
          shb->byteorder_magic = *local_data++;
          // TODO check byte order.
@@ -108,17 +108,19 @@ void parse_by_block_type(struct _light_pcapng *current, const uint32_t *local_da
          current->block_body = (uint32_t*)shb;
          local_offset = (size_t)local_data - (size_t)block_start;
          opt = __parse_options((uint32_t **)&local_data, current->block_total_length - local_offset - sizeof(current->block_total_length));
+         if (opt == NULL)
+            opt = calloc(1, sizeof(struct _light_option));
          current->options = opt;
       }
       break;
 
       case LIGHT_INTERFACE_BLOCK:
-      {
+      { // PCPP patch
          DPRINT_HERE(LIGHT_INTERFACE_BLOCK);
          struct _light_interface_description_block *idb = calloc(1, sizeof(struct _light_interface_description_block));
          struct _light_option *opt = NULL;
          uint32_t link_reserved = *local_data++;
-         int32_t local_offset;
+         int32_t local_offset = 0;
 
          idb->link_type = link_reserved & 0xFFFF;
          idb->reserved = (link_reserved >> 16) & 0xFFFF;
@@ -126,12 +128,14 @@ void parse_by_block_type(struct _light_pcapng *current, const uint32_t *local_da
          current->block_body = (uint32_t*)idb;
          local_offset = (size_t)local_data - (size_t)block_start;
          opt = __parse_options((uint32_t **)&local_data, current->block_total_length - local_offset - sizeof(current->block_total_length));
+         if (opt == NULL)
+            opt = calloc(1, sizeof(struct _light_option));
          current->options = opt;
       }
       break;
 
       case LIGHT_ENHANCED_PACKET_BLOCK:
-      {
+      { // PCPP Patch
          DPRINT_HERE(LIGHT_ENHANCED_PACKET_BLOCK);
          struct _light_enhanced_packet_block *epb = NULL;
          struct _light_option *opt = NULL;
@@ -157,6 +161,8 @@ void parse_by_block_type(struct _light_pcapng *current, const uint32_t *local_da
          current->block_body = (uint32_t*)epb;
          local_offset = (size_t)local_data - (size_t)block_start;
          opt = __parse_options((uint32_t **)&local_data, current->block_total_length - local_offset - sizeof(current->block_total_length));
+         if (opt == NULL)
+            opt = calloc(1, sizeof(struct _light_option));
          current->options = opt;
       }
       break;
@@ -200,6 +206,8 @@ void parse_by_block_type(struct _light_pcapng *current, const uint32_t *local_da
          current->block_body = (uint32_t*)cnb;
          local_offset = (size_t)local_data - (size_t)block_start;
          opt = __parse_options((uint32_t **)&local_data, current->block_total_length - local_offset - sizeof(current->block_total_length));
+         if (opt == NULL)
+            opt = calloc(1, sizeof(struct _light_option));
          current->options = opt;
       }
       break;
@@ -442,6 +450,14 @@ char *light_pcapng_to_string(light_pcapng pcapng)
 
 uint32_t *light_pcapng_to_memory(const light_pcapng pcapng, size_t *size)
 {
+   if (size == NULL) { // PCPP patch
+      return NULL;
+   }
+   if (pcapng == NULL) {
+      *size = 0;
+		return NULL;
+	}
+
    light_pcapng iterator = pcapng;
    size_t bytes = light_get_size(pcapng);
    uint32_t *block_mem = calloc(bytes, 1);

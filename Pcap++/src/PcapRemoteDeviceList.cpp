@@ -1,223 +1,189 @@
-#if defined(_WIN32)
-
 #define LOG_MODULE PcapLogModuleRemoteDevice
 
 #include "PcapRemoteDeviceList.h"
 #include "Logger.h"
 #include "IpUtils.h"
+#include "PcapUtils.h"
+#include "IpAddressUtils.h"
 #include "pcap.h"
+#include <array>
 #include <ws2tcpip.h>
 
 namespace pcpp
 {
 
-PcapRemoteDeviceList* PcapRemoteDeviceList::getRemoteDeviceList(const IPAddress& ipAddress, uint16_t port)
-{
-	return PcapRemoteDeviceList::getRemoteDeviceList(ipAddress, port, NULL);
-}
-
-PcapRemoteDeviceList* PcapRemoteDeviceList::getRemoteDeviceList(const IPAddress& ipAddress, uint16_t port, PcapRemoteAuthentication* remoteAuth)
-{
-	if (!ipAddress.isValid())
+	namespace
 	{
-		PCPP_LOG_ERROR("IP address is NULL or not valid");
-		return NULL;
-	}
-
-	PCPP_LOG_DEBUG("Searching remote devices on IP: " << ipAddress << " and port: " << port);
-	char remoteCaptureString[PCAP_BUF_SIZE];
-	char errbuf[PCAP_ERRBUF_SIZE];
-	std::ostringstream portAsString;
-	portAsString << port;
-	if (pcap_createsrcstr(remoteCaptureString, PCAP_SRC_IFREMOTE, ipAddress.toString().c_str(), portAsString.str().c_str(), NULL, errbuf) != 0)
-	{
-		PCPP_LOG_ERROR("Error in creating the remote connection string. Error was: " << errbuf);
-		return NULL;
-	}
-
-	PCPP_LOG_DEBUG("Remote capture string: " << remoteCaptureString);
-
-	pcap_rmtauth* pRmAuth = NULL;
-	pcap_rmtauth rmAuth;
-	if (remoteAuth != NULL)
-	{
-		PCPP_LOG_DEBUG("Authentication requested. Username: " << remoteAuth->userName << ", Password: " << remoteAuth->password);
-		rmAuth = remoteAuth->getPcapRmAuth();
-		pRmAuth = &rmAuth;
-	}
-
-	pcap_if_t* interfaceList;
-	char errorBuf[PCAP_ERRBUF_SIZE];
-	if (pcap_findalldevs_ex(remoteCaptureString, pRmAuth, &interfaceList, errorBuf) < 0)
-	{
-		PCPP_LOG_ERROR("Error retrieving device on remote machine. Error string is: " << errorBuf);
-		return NULL;
-	}
-
-	PcapRemoteDeviceList* resultList = new PcapRemoteDeviceList();
-	resultList->setRemoteMachineIpAddress(ipAddress);
-	resultList->setRemoteMachinePort(port);
-	resultList->setRemoteAuthentication(remoteAuth);
-
-	pcap_if_t* currInterface = interfaceList;
-	while (currInterface != NULL)
-	{
-		PcapRemoteDevice* pNewRemoteDevice = new PcapRemoteDevice(currInterface, resultList->m_RemoteAuthentication,
-				resultList->getRemoteMachineIpAddress(), resultList->getRemoteMachinePort());
-		resultList->m_RemoteDeviceList.push_back(pNewRemoteDevice);
-		currInterface = currInterface->next;
-	}
-
-	pcap_freealldevs(interfaceList);
-	return resultList;
-}
-
-PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const std::string& ipAddrAsString) const
-{
-	IPAddress ipAddr = IPAddress(ipAddrAsString);
-	if (!ipAddr.isValid())
-	{
-		PCPP_LOG_ERROR("IP address no valid");
-		return NULL;
-	}
-
-	PcapRemoteDevice* result = getRemoteDeviceByIP(ipAddr);
-	return result;
-}
-
-PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPAddress& ipAddr) const
-{
-	if (!ipAddr.isValid())
-	{
-		PCPP_LOG_ERROR("IP address not valid");
-		return NULL;
-	}
-	if (ipAddr.getType() == IPAddress::IPv4AddressType)
-	{
-		return getRemoteDeviceByIP(ipAddr.getIPv4());
-	}
-	else //IPAddress::IPv6AddressType
-	{
-		return getRemoteDeviceByIP(ipAddr.getIPv6());
-	}
-}
-
-
-PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPv4Address& ip4Addr) const
-{
-	PCPP_LOG_DEBUG("Searching all remote devices in list...");
-	for(ConstRemoteDeviceListIterator devIter = m_RemoteDeviceList.begin(); devIter != m_RemoteDeviceList.end(); devIter++)
-	{
-		PCPP_LOG_DEBUG("Searching device '" << (*devIter)->m_Name << "'. Searching all addresses...");
-		for(std::vector<pcap_addr_t>::iterator addrIter = (*devIter)->m_Addresses.begin(); addrIter != (*devIter)->m_Addresses.end(); addrIter++)
+		/// Fetches a list of all network devices on a remote machine that WinPcap/NPcap can find.
+		/// @param[in] ipAddress IP address of the remote machine.
+		/// @param[in] port Port to use when connecting to the remote machine.
+		/// @param[in] pRmAuth Pointer to an authentication structure to use when connecting to the remote machine.
+		/// Nullptr if no authentication is required.
+		/// @return A smart pointer to an interface list structure.
+		/// @throws std::runtime_error The system encountered an error fetching the devices.
+		std::unique_ptr<pcap_if_t, internal::PcapFreeAllDevsDeleter> getAllRemotePcapDevices(
+		    const IPAddress& ipAddress, uint16_t port, pcap_rmtauth* pRmAuth = nullptr)
 		{
-			if (Logger::getInstance().isDebugEnabled(PcapLogModuleRemoteDevice) && addrIter->addr != NULL)
+			PCPP_LOG_DEBUG("Searching remote devices on IP: " << ipAddress << " and port: " << port);
+			std::array<char, PCAP_BUF_SIZE> remoteCaptureString;
+			std::array<char, PCAP_ERRBUF_SIZE> errorBuf;
+			if (pcap_createsrcstr(remoteCaptureString.data(), PCAP_SRC_IFREMOTE, ipAddress.toString().c_str(),
+			                      std::to_string(port).c_str(), nullptr, errorBuf.data()) != 0)
 			{
-				char addrAsString[INET6_ADDRSTRLEN];
-				internal::sockaddr2string(addrIter->addr, addrAsString);
-				PCPP_LOG_DEBUG("Searching address " << addrAsString);
+				throw std::runtime_error("Error creating the remote connection string. Error: " +
+				                         std::string(errorBuf.begin(), errorBuf.end()));
 			}
 
-			in_addr* currAddr = internal::sockaddr2in_addr(addrIter->addr);
-			if (currAddr == NULL)
-			{
-				PCPP_LOG_DEBUG("Address is NULL");
-				continue;
-			}
+			PCPP_LOG_DEBUG("Remote capture string: " << remoteCaptureString.data());
 
-			if (currAddr->s_addr == ip4Addr.toInt())
+			pcap_if_t* interfaceListRaw;
+			if (pcap_findalldevs_ex(remoteCaptureString.data(), pRmAuth, &interfaceListRaw, errorBuf.data()) < 0)
 			{
-				PCPP_LOG_DEBUG("Found matched address!");
-				return (*devIter);
+				throw std::runtime_error("Error retrieving device on remote machine. Error: " +
+				                         std::string(errorBuf.begin(), errorBuf.end()));
 			}
+			return std::unique_ptr<pcap_if_t, internal::PcapFreeAllDevsDeleter>(interfaceListRaw);
+		}
+	}  // namespace
+
+	PcapRemoteDeviceList::PcapRemoteDeviceList(const IPAddress& ipAddress, uint16_t port,
+	                                           std::shared_ptr<PcapRemoteAuthentication> remoteAuth,
+	                                           std::vector<PcapRemoteDevice*> deviceList)
+	    : m_RemoteDeviceList(std::move(deviceList)), m_RemoteMachineIpAddress(ipAddress), m_RemoteMachinePort(port),
+	      m_RemoteAuthentication(std::move(remoteAuth))
+	{}
+
+	PcapRemoteDeviceList* PcapRemoteDeviceList::getRemoteDeviceList(const IPAddress& ipAddress, uint16_t port)
+	{
+		auto result = PcapRemoteDeviceList::createRemoteDeviceList(ipAddress, port);
+		return result.release();
+	}
+
+	std::unique_ptr<PcapRemoteDeviceList> PcapRemoteDeviceList::createRemoteDeviceList(const IPAddress& ipAddress,
+	                                                                                   uint16_t port)
+	{
+		return PcapRemoteDeviceList::createRemoteDeviceList(ipAddress, port, nullptr);
+	}
+
+	PcapRemoteDeviceList* PcapRemoteDeviceList::getRemoteDeviceList(const IPAddress& ipAddress, uint16_t port,
+	                                                                PcapRemoteAuthentication* remoteAuth)
+	{
+		auto result = PcapRemoteDeviceList::createRemoteDeviceList(ipAddress, port, remoteAuth);
+		return result.release();
+	}
+
+	std::unique_ptr<PcapRemoteDeviceList> PcapRemoteDeviceList::createRemoteDeviceList(
+	    const IPAddress& ipAddress, uint16_t port, PcapRemoteAuthentication const* remoteAuth)
+	{
+		std::shared_ptr<PcapRemoteAuthentication> pRemoteAuthCopy;
+		pcap_rmtauth* pRmAuth = nullptr;
+		pcap_rmtauth rmAuth;
+		if (remoteAuth != nullptr)
+		{
+			PCPP_LOG_DEBUG("Authentication requested. Username: " << remoteAuth->userName
+			                                                      << ", Password: " << remoteAuth->password);
+			pRemoteAuthCopy = std::make_shared<PcapRemoteAuthentication>(*remoteAuth);
+			rmAuth = pRemoteAuthCopy->getPcapRmAuth();
+			pRmAuth = &rmAuth;
+		}
+
+		std::unique_ptr<pcap_if_t, internal::PcapFreeAllDevsDeleter> interfaceList;
+		try
+		{
+			interfaceList = getAllRemotePcapDevices(ipAddress, port, pRmAuth);
+		}
+		catch (const std::exception& e)
+		{
+			PCPP_LOG_ERROR(e.what());
+			return nullptr;
+		}
+
+		std::vector<PcapRemoteDevice*> devices;
+		try
+		{
+			for (pcap_if_t* currInterface = interfaceList.get(); currInterface != nullptr;
+			     currInterface = currInterface->next)
+			{
+				auto pNewRemoteDevice = std::unique_ptr<PcapRemoteDevice>(
+				    new PcapRemoteDevice(currInterface, pRemoteAuthCopy, ipAddress, port));
+				// Release is called after pushback to prevent memory leaks if vector reallocation fails.
+				// cppcheck-suppress danglingLifetime
+				devices.push_back(pNewRemoteDevice.get());
+				pNewRemoteDevice.release();
+			}
+		}
+		catch (const std::exception& e)
+		{
+			for (auto device : devices)
+			{
+				delete device;
+			}
+			PCPP_LOG_ERROR("Error creating remote devices: " << e.what());
+			return nullptr;
+		}
+
+		return std::unique_ptr<PcapRemoteDeviceList>(
+		    new PcapRemoteDeviceList(ipAddress, port, pRemoteAuthCopy, devices));
+	}
+
+	PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const std::string& ipAddrAsString) const
+	{
+		IPAddress ipAddr;
+
+		try
+		{
+			ipAddr = IPAddress(ipAddrAsString);
+		}
+		catch (std::exception&)
+		{
+			PCPP_LOG_ERROR("IP address no valid: " + ipAddrAsString);
+			return nullptr;
+		}
+
+		PcapRemoteDevice* result = getRemoteDeviceByIP(ipAddr);
+		return result;
+	}
+
+	PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPAddress& ipAddr) const
+	{
+		if (ipAddr.getType() == IPAddress::IPv4AddressType)
+		{
+			return getRemoteDeviceByIP(ipAddr.getIPv4());
+		}
+		else  // IPAddress::IPv6AddressType
+		{
+			return getRemoteDeviceByIP(ipAddr.getIPv6());
 		}
 	}
 
-	return NULL;
-
-}
-
-PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPv6Address& ip6Addr) const
-{
-	PCPP_LOG_DEBUG("Searching all remote devices in list...");
-	for(ConstRemoteDeviceListIterator devIter = m_RemoteDeviceList.begin(); devIter != m_RemoteDeviceList.end(); devIter++)
+	PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPv4Address& ip4Addr) const
 	{
-		PCPP_LOG_DEBUG("Searching device '" << (*devIter)->m_Name << "'. Searching all addresses...");
-		for(std::vector<pcap_addr_t>::iterator addrIter = (*devIter)->m_Addresses.begin(); addrIter != (*devIter)->m_Addresses.end(); addrIter++)
+		auto it = std::find_if(m_RemoteDeviceList.begin(), m_RemoteDeviceList.end(),
+		                       [&ip4Addr](PcapRemoteDevice const* devPtr) {
+			                       auto devIP = devPtr->getIPv4Address();
+			                       return devIP == ip4Addr;
+		                       });
+		return it != m_RemoteDeviceList.end() ? *it : nullptr;
+	}
+
+	PcapRemoteDevice* PcapRemoteDeviceList::getRemoteDeviceByIP(const IPv6Address& ip6Addr) const
+	{
+		auto it = std::find_if(m_RemoteDeviceList.begin(), m_RemoteDeviceList.end(),
+		                       [&ip6Addr](PcapRemoteDevice const* devPtr) {
+			                       auto devIP = devPtr->getIPv6Address();
+			                       return devIP == ip6Addr;
+		                       });
+		return it != m_RemoteDeviceList.end() ? *it : nullptr;
+	}
+
+	PcapRemoteDeviceList::~PcapRemoteDeviceList()
+	{
+		while (m_RemoteDeviceList.size() > 0)
 		{
-			if (Logger::getInstance().isDebugEnabled(PcapLogModuleRemoteDevice) && addrIter->addr != NULL)
-			{
-				char addrAsString[INET6_ADDRSTRLEN];
-				internal::sockaddr2string(addrIter->addr, addrAsString);
-				PCPP_LOG_DEBUG("Searching address " << addrAsString);
-			}
-
-			in6_addr* currAddr = internal::sockaddr2in6_addr(addrIter->addr);
-			if (currAddr == NULL)
-			{
-				PCPP_LOG_DEBUG("Address is NULL");
-				continue;
-			}
-
-			uint8_t* addrAsArr; size_t addrLen;
-			ip6Addr.copyTo(&addrAsArr, addrLen);
-			if (memcmp(currAddr, addrAsArr, sizeof(struct in6_addr)) == 0)
-			{
-				PCPP_LOG_DEBUG("Found matched address!");
-				delete [] addrAsArr;
-				return (*devIter);
-			}
-			delete [] addrAsArr;
+			RemoteDeviceListIterator devIter = m_RemoteDeviceList.begin();
+			delete (*devIter);
+			m_RemoteDeviceList.erase(devIter);
 		}
 	}
 
-	return NULL;
-
-}
-
-void PcapRemoteDeviceList::setRemoteMachineIpAddress(const IPAddress& ipAddress)
-{
-	if (!ipAddress.isValid())
-	{
-		PCPP_LOG_ERROR("Trying to set an invalid IP address to PcapRemoteDeviceList");
-		return;
-	}
-
-	m_RemoteMachineIpAddress = ipAddress;
-}
-
-void PcapRemoteDeviceList::setRemoteMachinePort(uint16_t port)
-{
-	m_RemoteMachinePort = port;
-}
-
-void PcapRemoteDeviceList::setRemoteAuthentication(const PcapRemoteAuthentication* remoteAuth)
-{
-	if (remoteAuth != NULL)
-		m_RemoteAuthentication = new PcapRemoteAuthentication(*remoteAuth);
-	else
-	{
-		if (m_RemoteAuthentication != NULL)
-			delete m_RemoteAuthentication;
-		m_RemoteAuthentication = NULL;
-	}
-}
-
-PcapRemoteDeviceList::~PcapRemoteDeviceList()
-{
-	while (m_RemoteDeviceList.size() > 0)
-	{
-		RemoteDeviceListIterator devIter = m_RemoteDeviceList.begin();
-		delete (*devIter);
-		m_RemoteDeviceList.erase(devIter);
-	}
-
-	if (m_RemoteAuthentication != NULL)
-	{
-		delete m_RemoteAuthentication;
-	}
-}
-
-} // namespace pcpp
-
-#endif // _WIN32
+}  // namespace pcpp

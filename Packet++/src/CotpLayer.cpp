@@ -1,9 +1,6 @@
 #include "../header/CotpLayer.h"
-#include "EndianPortable.h"
+#include "S7CommLayer.h"
 #include <PayloadLayer.h>
-#include <cstring>
-#include <iostream>
-#include <sstream>
 
 namespace pcpp
 {
@@ -14,7 +11,7 @@ namespace pcpp
 		m_DataLen = headerLen;
 		m_Data = new uint8_t[headerLen];
 		memset(m_Data, 0, headerLen);
-		cotphdr *cotpHdr = (cotphdr *)m_Data;
+		cotphdr* cotpHdr = getCotpHeader();
 		cotpHdr->length = 0x02;
 		cotpHdr->pduType = 0x0f;
 		cotpHdr->tpduNumber = tpduNumber;
@@ -26,24 +23,42 @@ namespace pcpp
 		return "Cotp Layer";
 	}
 
-	uint8_t CotpLayer::getLength() const { return getCotpHeader()->length; }
+	uint8_t CotpLayer::getLength() const
+	{
+		return getCotpHeader()->length;
+	}
 
-	uint8_t CotpLayer::getPduType() const { return getCotpHeader()->pduType; }
+	uint8_t CotpLayer::getPduType() const
+	{
+		return getCotpHeader()->pduType;
+	}
 
-	uint8_t CotpLayer::getTpduNumber() const { return getCotpHeader()->tpduNumber; }
+	uint8_t CotpLayer::getTpduNumber() const
+	{
+		return getCotpHeader()->tpduNumber;
+	}
 
-	void CotpLayer::setLength(uint8_t length) const { getCotpHeader()->length = length; }
+	void CotpLayer::setLength(uint8_t length) const
+	{
+		getCotpHeader()->length = length;
+	}
 
-	void CotpLayer::setPduType(uint8_t pduType) const { getCotpHeader()->pduType = pduType; }
+	void CotpLayer::setPduType(uint8_t pduType) const
+	{
+		getCotpHeader()->pduType = pduType;
+	}
 
-	void CotpLayer::setTpduNumber(uint8_t tpduNumber) const { getCotpHeader()->tpduNumber = tpduNumber; }
+	void CotpLayer::setTpduNumber(uint8_t tpduNumber) const
+	{
+		getCotpHeader()->tpduNumber = tpduNumber;
+	}
 
-	bool CotpLayer::isDataValid(const uint8_t *data, size_t dataSize)
+	bool CotpLayer::isDataValid(const uint8_t* data, size_t dataSize)
 	{
 		if (!data || dataSize < sizeof(cotphdr))
 			return false;
 
-		return  data[1] == 0xf0 && data[0] == 2;
+		return data[1] == 0xf0 && data[0] == 2;
 	}
 
 	void CotpLayer::parseNextLayer()
@@ -52,9 +67,12 @@ namespace pcpp
 		if (m_DataLen <= headerLen)
 			return;
 
-		uint8_t *payload = m_Data + headerLen;
+		uint8_t* payload = m_Data + headerLen;
 		size_t payloadLen = m_DataLen - headerLen;
 
-		m_NextLayer = new PayloadLayer(payload, payloadLen, this, m_Packet);
+		if (S7CommLayer::isDataValid(payload, payloadLen))
+			m_NextLayer = new S7CommLayer(payload, payloadLen, this, m_Packet);
+		else
+			m_NextLayer = new PayloadLayer(payload, payloadLen, this, m_Packet);
 	}
-} // namespace pcpp
+}  // namespace pcpp

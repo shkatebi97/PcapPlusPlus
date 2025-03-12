@@ -1,6 +1,7 @@
 add_executable(
   Packet++Test
   main.cpp
+  Tests/Asn1Tests.cpp
   Tests/BgpTests.cpp
   Tests/CotpTests.cpp
   Tests/DhcpTests.cpp
@@ -17,6 +18,7 @@ add_executable(
   Tests/IPSecTests.cpp
   Tests/IPv4Tests.cpp
   Tests/IPv6Tests.cpp
+  Tests/LdapTests.cpp
   Tests/LLCTests.cpp
   Tests/NflogTests.cpp
   Tests/NtpTests.cpp
@@ -24,9 +26,11 @@ add_executable(
   Tests/PacketUtilsTests.cpp
   Tests/PPPoETests.cpp
   Tests/RadiusTests.cpp
+  Tests/S7CommTests.cpp
   Tests/SipSdpTests.cpp
   Tests/Sll2Tests.cpp
   Tests/SllNullLoopbackTests.cpp
+  Tests/SmtpTests.cpp
   Tests/SomeIpSdTests.cpp
   Tests/SomeIpTests.cpp
   Tests/SSHTests.cpp
@@ -38,14 +42,11 @@ add_executable(
   Tests/VlanMplsTests.cpp
   Tests/VrrpTest.cpp
   Tests/WakeOnLanTests.cpp
-  Utils/TestUtils.cpp)
+  Tests/WireGuardTests.cpp
+  Utils/TestUtils.cpp
+)
 
-target_link_libraries(
-  Packet++Test
-  PUBLIC memplumber
-         Packet++
-         PcppTestFramework
-         EndianPortable)
+target_link_libraries(Packet++Test PUBLIC memplumber Packet++ PcppTestFramework EndianPortable)
 
 if(MSVC)
   # This executable requires getopt.h not available on VStudio
@@ -55,7 +56,4 @@ endif()
 set_property(TARGET Packet++Test PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Bin")
 set_property(TARGET Packet++Test PROPERTY RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/Bin")
 set_property(TARGET Packet++Test PROPERTY RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/Bin")
-add_test(
-  NAME Packet++Test
-  COMMAND $<TARGET_FILE:Packet++Test>
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+add_test(NAME Packet++Test COMMAND $<TARGET_FILE:Packet++Test> WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)

@@ -1,5 +1,4 @@
-#ifndef PACKETPP_SLL2_LAYER
-#define PACKETPP_SLL2_LAYER
+#pragma once
 
 #include "MacAddress.h"
 #include "Layer.h"
@@ -56,7 +55,8 @@ namespace pcpp
 		 * @param[in] dataLen Size of the data in bytes
 		 * @param[in] packet A pointer to the Packet instance where layer will be stored in
 		 */
-		Sll2Layer(uint8_t* data, size_t dataLen, Packet* packet) : Layer(data, dataLen, nullptr, packet) { m_Protocol = SLL2; }
+		Sll2Layer(uint8_t* data, size_t dataLen, Packet* packet) : Layer(data, dataLen, nullptr, packet, SLL2)
+		{}
 
 		/**
 		 * A constructor that creates a new SLL2 header and allocates the data
@@ -66,13 +66,17 @@ namespace pcpp
 		 */
 		Sll2Layer(uint32_t interfaceIndex, uint16_t ARPHRDType, uint8_t packetType);
 
-		~Sll2Layer() {}
+		~Sll2Layer() override = default;
 
 		/**
-		 * Get a pointer to the Sll header. Notice this points directly to the data, so every change will change the actual packet data
+		 * Get a pointer to the Sll header. Notice this points directly to the data, so every change will change the
+		 * actual packet data
 		 * @return A pointer to the sll2_header
 		 */
-		sll2_header* getSll2Header() const { return (sll2_header*)m_Data; }
+		sll2_header* getSll2Header() const
+		{
+			return reinterpret_cast<sll2_header*>(m_Data);
+		}
 
 		/**
 		 * A static method that validates the input data
@@ -152,7 +156,8 @@ namespace pcpp
 
 		/**
 		 * Get a MAC address in the link layer address field
-		 * @return return macAddress pointer was set successfully, null pointer if d MAC address isn't valid or if set failed
+		 * @return return macAddress pointer was set successfully, null pointer if d MAC address isn't valid or if set
+		 * failed
 		 */
 		MacAddress getLinkLayerAsMacAddress();
 
@@ -166,27 +171,30 @@ namespace pcpp
 		// implement abstract methods
 
 		/**
-		 * Currently identifies the following next layers: IPv4Layer, IPv6Layer, ArpLayer, VlanLayer, PPPoESessionLayer, PPPoEDiscoveryLayer,
-		 * MplsLayer.
-		 * Otherwise sets PayloadLayer
+		 * Currently identifies the following next layers: IPv4Layer, IPv6Layer, ArpLayer, VlanLayer, PPPoESessionLayer,
+		 * PPPoEDiscoveryLayer, MplsLayer. Otherwise sets PayloadLayer
 		 */
-		void parseNextLayer();
+		void parseNextLayer() override;
 
 		/**
 		 * Calculate the next protocol type for known protocols: IPv4, IPv6, ARP, VLAN
 		 */
-		void computeCalculateFields();
+		void computeCalculateFields() override;
 
 		/**
 		 * @return Size of sll2_header
 		 */
-		size_t getHeaderLen() const { return sizeof(sll2_header); }
+		size_t getHeaderLen() const override
+		{
+			return sizeof(sll2_header);
+		}
 
-		std::string toString() const;
+		std::string toString() const override;
 
-		OsiModelLayer getOsiModelLayer() const { return OsiModelDataLinkLayer; }
+		OsiModelLayer getOsiModelLayer() const override
+		{
+			return OsiModelDataLinkLayer;
+		}
 	};
 
-} // namespace pcpp
-
-#endif /* PACKETPP_SLL2_LAYER */
+}  // namespace pcpp
